@@ -1,70 +1,5 @@
-// Type definitions (you may need to adjust these based on your actual enums)
-type RESOURCES = "psionic" | "material" | "fuel" | "relic" | "weapons" | "";
-type Fates = string; 
-type TITLES = string; 
-type FlagshipSpot = "city" | "starport" | "";
+import { GameData, GeneralData, PlayerData, RESOURCES, TITLES, Fates } from "@robertguglielmino/arcs-types";
 
-export interface GameData {
-    playerData: PlayerData;
-    gameData: GeneralData;
-}
-
-export interface PlayerData {
-    name: string[];
-    fate: Fates[];
-    color: string[];
-    power: number[];
-    objectiveProgress: number[];
-    resources: RESOURCES[][];
-    outrage: boolean[][];
-    courtCards: string[][];
-    supply: {
-        cities: number[];
-        starports: number[];
-        ships: number[];
-        agents: number[];
-        favors: number[][];
-    };
-    hasFlagship: boolean[];
-    flagshipBoard: (FlagshipSpot[] | undefined)[];
-    ambitionProgress: {
-        tycoon: number[];
-        tyrant: number[];
-        warlord: number[];
-        keeper: number[];
-        empath: number[];
-        edenguard: number[];
-        blightkin: number[];
-    };
-    ambitionPodium: {
-        tycoon: number[][];
-        tyrant: number[][];
-        warlord: number[][];
-        keeper: number[][];
-        empath: number[][];
-        edenguard: number[][];
-        blightkin: number[][];
-    };
-    titles: TITLES[][];
-}
-
-export interface GeneralData {
-    isCampaign: boolean;
-    ambitionDeclarations: string[][];
-    courtCards: CourtCard[];
-    edicts: string[];
-    laws: string[];
-}
-
-export interface CourtCard {
-    id: string;
-    agents: Agent[];
-}
-
-export interface Agent {
-    color: string;
-    value: number;
-}
 
 // Input JSON interface
 interface InputJSON {
@@ -149,6 +84,53 @@ export function convertJSONToGameData(input: InputJSON): GameData {
         return podium;
     }
 
+    const getAmbitionDeclaration = (id: string): number[][] => {
+        const ambition = ambitions.find(a => a.id === id);
+
+        if (!ambition) {
+          console.error("not valid ambition!");
+          return [];
+        }
+
+        const AMBITION_MARKER_MAP = {
+          9: "firstGold",
+          6: "secondGold",
+          4: "thirdGold",
+
+          5: "firstSilver",
+          3: "secondSilver",
+          2: "thirdSilver",
+        }
+
+        const sortedAmbitions = ambition.declared.map(a => AMBITION_MARKER_MAP[a]);
+
+        return sortedAmbitions;
+    }
+
+      
+    const getAmbitionDeclared = (id: string) => {
+      const ambition = ambitions.find(a => a.id === id);
+
+      if (!ambition) {
+        console.error("not valid ambition!");
+        return [];
+      }
+
+      const AMBITION_MARKER_MAP = {
+        9: "firstGold",
+        6: "secondGold",
+        4: "thirdGold",
+
+        5: "firstSilver",
+        3: "secondSilver",
+        2: "thirdSilver",
+      }
+
+      const sortedAmbitions = ambition.declared.map(a => AMBITION_MARKER_MAP[a]);
+
+      return sortedAmbitions;
+    }
+
     const getColorFromHex = (color: string): string => {
       switch (color) {
         case "0095A9":
@@ -167,7 +149,10 @@ export function convertJSONToGameData(input: InputJSON): GameData {
     // Extract player data
     const playerData: PlayerData = {
         name: players.map(p => p.name || ""),
-        fate: players.map(p => p.cards.filter(card => card.includes("FATE"))[0]), 
+        fate: players.map(p => {
+          let parsedFates = p.cards.filter(card => card.includes("FATE"))
+          return parsedFates ? parsedFates[0].replace("-", "_") as Fates : Fates.Steward; //steward is default if nothing else parsed
+        }), 
         color: players.map(p => getColorFromHex(p.color)),
         power: players.map(p => p.power),
         objectiveProgress: players.map(p => p.objective || 0),
@@ -182,7 +167,7 @@ export function convertJSONToGameData(input: InputJSON): GameData {
         outrage: players.map(p => {
             return Array.isArray(p.outrage) ? p.outrage.map(() => true) : [false, false, false, false, false];
         }),
-        courtCards: players.map(p => p.court || []),
+        courtCards: players.map(p => p.court.map(card => card.replace("-", "_")) || []),
         ambitionProgress: {
             tycoon: getAmbitionRanking("tycoon"),
             tyrant: getAmbitionRanking("tyrant"),
@@ -191,6 +176,25 @@ export function convertJSONToGameData(input: InputJSON): GameData {
             empath: getAmbitionRanking("empath"),
             blightkin: getAmbitionRanking("blightkin"),
             edenguard: getAmbitionRanking("edenguard"),
+        },
+        hasFlagship: [false, false, false, false],
+        flagshipBoard: [[""],[""],[""],[""]], //not available yet
+        titles: players.map(p => p.titles as TITLES[])
+    };
+    
+    // Extract general data
+    const gameData: GeneralData = {
+        isCampaign: input.campaign,
+        hasBlightkin: playerData.fate.includes(Fates.Naturalist),
+        hasEdenguard: playerData.fate.includes(Fates.Guardian),
+        ambitionDeclarations: {
+            tycoon: getAmbitionDeclared("tycoon"),
+            tyrant: getAmbitionDeclared("tyrant"),
+            warlord: getAmbitionDeclared("warlord"),
+            keeper: getAmbitionDeclared("keeper"),
+            empath: getAmbitionDeclared("empath"),
+            blightkin: getAmbitionDeclared("blightkin"),
+            edenguard: getAmbitionDeclared("edenguard"),
         },
         ambitionPodium: {
             tycoon: getAmbitionPodium("tycoon"),
@@ -201,17 +205,8 @@ export function convertJSONToGameData(input: InputJSON): GameData {
             blightkin: getAmbitionPodium("blightkin"),
             edenguard: getAmbitionPodium("edenguard"),
         },
-        hasFlagship: [false, false, false, false],
-        flagshipBoard: [undefined, undefined, undefined, undefined],
-        titles: players.map(p => p.titles as TITLES[])
-    };
-    
-    // Extract general data
-    const gameData: GeneralData = {
-        isCampaign: input.campaign,
-        ambitionDeclarations: ambitions.map(a => a.declared),
         courtCards: court.map(c => ({
-            id: c.id,
+            id: c.id.replace("-", "_"),
             agents: c.influence
                 .map((value, index) => ({
                     color: getColorFromHex(players[index]?.color),
@@ -219,7 +214,7 @@ export function convertJSONToGameData(input: InputJSON): GameData {
                 }))
                 .filter(agent => agent.value > 0) // Only include agents with influence > 0
         })),
-        edicts: input.edicts || [],
+        edicts: input.edicts.map(edict => edict.replace("-", "_")) || [],
         laws: input.laws || []
     };
 

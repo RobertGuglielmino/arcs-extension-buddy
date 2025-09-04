@@ -25,10 +25,8 @@ const PUBSUB_ENDPOINT = `https://api.twitch.tv/helix/extensions/pubsub`;
 const REDIRECT_URI = `http://localhost:${PORT}/auth/callback`;
 
 let mainWindow;
-let expressApp;
 let server;
 let io;
-let startTime;
 let tray = null;
 
 let lastGameData = null;
@@ -176,8 +174,8 @@ function createTray() {
 */
 
 function startExpressServer() {
-  startTime = Date.now();
-  expressApp = express();
+  let startTime = Date.now();
+  let expressApp = express();
   server = http.createServer(expressApp);
   io = socketIo(server);
 
@@ -366,15 +364,13 @@ app.on("window-all-closed", function () {
 // TRANSFORM HELPER FUNCTIONS
 
 function convertJSONToGameData(input) {
-  if (config.debugMode) {
     console.log(
       "Received game data:",
-      JSON.stringify(gameData).substring(0, 100) + "..."
+      JSON.stringify(input)
     );
-  }
 
   const players = input.players;
-  const ambitions = input.ambitions;
+  const ambitions = input.ambitions.slice(0, players.length);
   const court = input.court;
 
   const getAmbitionRanking = (id) => {
@@ -383,6 +379,7 @@ function convertJSONToGameData(input) {
   };
 
   const getAmbitionPodium = (id) => {
+
     const ambition = ambitions.find((a) => a.id === id);
 
     if (!ambition) {
@@ -420,6 +417,29 @@ function convertJSONToGameData(input) {
     return podium;
   };
 
+  const getAmbitionDeclared = (id) => {
+    const ambition = ambitions.find(a => a.id === id);
+
+    if (!ambition) {
+      console.error("not valid ambition!");
+      return [];
+    }
+
+    const AMBITION_MARKER_MAP = {
+      9: "firstGold",
+      6: "secondGold",
+      4: "thirdGold",
+
+      5: "firstSilver",
+      3: "secondSilver",
+      2: "thirdSilver",
+    }
+
+    const sortedAmbitions = ambition.declared.map(a => AMBITION_MARKER_MAP[a]);
+
+    return sortedAmbitions;
+  }
+
   const getColorFromHex = (color) => {
     switch (color) {
       case "0095A9":
@@ -437,9 +457,10 @@ function convertJSONToGameData(input) {
 
   const playerData = {
     name: players.map((p) => p.name || ""),
-    fate: players.map(
-      (p) => p.cards.filter((card) => card.includes("FATE"))[0]
-    ),
+    fate: players.map(p => {
+      let parsedFates = p.cards.filter(card => card.includes("FATE"))
+      return !!parsedFates[0] ? parsedFates[0].replace("-", "_")  : "ARCS_FATE01"; //steward is default if nothing else parsed
+    }), 
     color: players.map((p) => getColorFromHex(p.color)),
     power: players.map((p) => p.power),
     objectiveProgress: players.map((p) => p.objective || 0),
@@ -458,7 +479,7 @@ function convertJSONToGameData(input) {
         ? p.outrage.map(() => true)
         : [false, false, false, false, false];
     }),
-    courtCards: players.map((p) => p.court || []),
+        courtCards: players.map(p => p.court.map(card => formatCourtCard(card)) || []),
     ambitionProgress: {
       tycoon: getAmbitionRanking("tycoon"),
       tyrant: getAmbitionRanking("tyrant"),
@@ -469,16 +490,24 @@ function convertJSONToGameData(input) {
       edenguard: getAmbitionRanking("edenguard"),
     },
     hasFlagship: [false, false, false, false],
-    flagshipBoard: [undefined, undefined, undefined, undefined],
-    titles: players.map((p) => p.titles),
+    flagshipBoard: [[],[],[],[]],
+    titles: [],//players.map((p) => p.map(title => TITLES_BY_CODE[title])),
   };
 
   // Extract general data
   const gameData = {
     isCampaign: input.campaign,
-    hasBlightkin: false, //playerData.fate.includes(Fates.Naturalist),
-    hasEdenguard: false, //playerData.fate.includes(Fates.Guardian),
-    ambitionDeclarations: ambitions.map((a) => a.declared),
+    hasBlightkin: playerData.fate.includes("ARCS_FATE21"), 
+    hasEdenguard: playerData.fate.includes("ARCS_FATE20"), 
+    ambitionDeclarations: {
+      tycoon: getAmbitionDeclared("tycoon"),
+      tyrant: getAmbitionDeclared("tyrant"),
+      warlord: getAmbitionDeclared("warlord"),
+      keeper: getAmbitionDeclared("keeper"),
+      empath: getAmbitionDeclared("empath"),
+      blightkin: getAmbitionDeclared("blightkin"),
+      edenguard: getAmbitionDeclared("edenguard"),
+    } ,
     ambitionPodium: {
       tycoon: getAmbitionPodium("tycoon"),
       tyrant: getAmbitionPodium("tyrant"),
@@ -489,7 +518,7 @@ function convertJSONToGameData(input) {
       edenguard: getAmbitionPodium("edenguard"),
     },
     courtCards: court.map((c) => ({
-      id: c.id,
+      id: formatCourtCard(c.id),
       agents: c.influence
         .map((value, index) => ({
           color: getColorFromHex(players[index]?.color),
@@ -497,7 +526,7 @@ function convertJSONToGameData(input) {
         }))
         .filter((agent) => agent.value > 0), // Only include agents with influence > 0
     })),
-    edicts: input.edicts || [],
+    edicts: input.edicts.map(edict => formatEdict(edict)) || [],
     laws: input.laws || [],
   };
 
@@ -510,7 +539,25 @@ function convertJSONToGameData(input) {
   lastGameData = newData;
   ioEmitGameData(newData);
 
+  console.log(newData);
+
   return newData;
+}
+
+function formatCourtCard(id) {
+  if (id.includes("FATE") && id.length == 12) {
+    return "ARCS_F0" + id.slice(-3);
+  }
+
+  return id.replace("-", "_");
+}
+
+function formatEdict(id) {
+  if (id.includes("AID")) {
+    id = id.slice(0, -1);
+  }
+
+  return id.replace("-", "_");
 }
 
 
@@ -721,3 +768,38 @@ function updateConfig(newConfig) {
     ioEmitConfigUpdate(config);
   }
 }
+
+
+// DICTIONARIES
+
+
+const FATES = [
+  "ARCS_FATE01",
+  "ARCS_FATE02",
+  "ARCS_FATE03",
+  "ARCS_FATE04",
+  "ARCS_FATE05",
+  "ARCS_FATE06",
+  "ARCS_FATE07",
+  "ARCS_FATE08",
+  "ARCS_FATE09",
+  "ARCS_FATE10",
+  "ARCS_FATE11",
+  "ARCS_FATE12",
+  "ARCS_FATE13",
+  "ARCS_FATE14",
+  "ARCS_FATE15",
+  "ARCS_FATE16",
+  "ARCS_FATE17",
+  "ARCS_FATE18",
+  "ARCS_FATE19",
+  "ARCS_FATE20",
+  "ARCS_FATE21",
+  "ARCS_FATE22",
+  "ARCS_FATE23",
+  "ARCS_FATE24"
+]
+
+const TITLES = [
+  
+]

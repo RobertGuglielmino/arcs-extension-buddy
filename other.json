@@ -1,0 +1,70 @@
+{
+  "playerData": {
+    "name": ["", "BlueChell", "", ""],
+    "fate": ["ARCS-FATE01", "ARCS-FATE07", "ARCS-FATE04", "ARCS-FATE06"],
+    "color": ["blue", "red", "yellow", "white"],
+    "power": [0, 0, 0, 0],
+    "objectiveProgress": [0, 0, 18, 0],
+    "resources": [
+      ["", "", "", "", "", ""],
+      ["psionic", "material", "", "", "", ""],
+      ["", "", "", "", "", ""],
+      ["", "", "", "", "", ""]
+    ],
+    "supply": {
+      "cities": [5, 4, 5, 5],
+      "starports": [5, 5, 5, 5],
+      "ships": [15, 15, 15, 12],
+      "agents": [6, 9, 6, 9],
+      "favors": [[], [], [], []]
+    },
+    "outrage": [[], [], [], []],
+    "courtCards": [[], [], [], []],
+    "ambitionProgress": {
+      "tycoon": [0, 0, 1, 0],
+      "tyrant": [0, 0, 4, 0],
+      "warlord": [0, 0, 3, 0],
+      "keeper": [0, 0, 0, 0],
+      "empath": [0, 0, 1, 0],
+      "blightkin": [0, 0, 0, 0],
+      "edenguard": [0, 0, 0, 0]
+    },
+    "ambitionPodium": {
+      "tycoon": [[2], []],
+      "tyrant": [[2], []],
+      "warlord": [[2], []],
+      "keeper": [[], [0, 1, 2, 3]],
+      "empath": [[2], []],
+      "blightkin": [[-1], [-1]],
+      "edenguard": [[-1], [-1]]
+    },
+    "hasFlagship": [false, false, false, false],
+    "flagshipBoard": [],
+    "titles": [
+      ["ARCS-AID09A"],
+      ["ARCS-AID08A"],
+      ["ARCS-AID06A"],
+      ["ARCS-AID07A"]
+    ]
+  },
+  "gameData": {
+    "isCampaign": true,
+    "ambitionDeclarations": [[], [], [], [], []],
+    "courtCards": [
+      { "id": "ARCS-AID01A", "agents": [] },
+      {
+        "id": "ARCS-CC07",
+        "agents": [
+          { "color": "blue", "value": 4 },
+          { "color": "yellow", "value": 1 },
+          { "color": "white", "value": 1 }
+        ]
+      },
+      { "id": "ARCS-CC12", "agents": [] },
+      { "id": "ARCS-CC06", "agents": [] },
+      { "id": "ARCS-CC13", "agents": [] }
+    ],
+    "edicts": ["ARCS-AID05A"],
+    "laws": []
+  }
+}

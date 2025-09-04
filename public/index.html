@@ -32,7 +32,7 @@
     }
     .card {
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      margin-bottom: 5px;
       border: none;
     }
     .card-header {
@@ -167,42 +167,6 @@
       <!-- Configuration and Log -->
       <div class="col-md-4">
         <div class="card">
-          <div class="card-header">Configuration</div>
-          <div class="card-body">
-            <div class="config-item">
-              <div class="form-check form-switch mb-2">
-                <input class="form-check-input" type="checkbox" id="auto-reconnect-switch" checked>
-                <label class="form-check-label" for="auto-reconnect-switch">Auto-reconnect</label>
-              </div>
-              <small class="text-muted">Automatically reconnect if connection is lost</small>
-            </div>
-            
-            <div class="config-item">
-              <div class="form-check form-switch mb-2">
-                <input class="form-check-input" type="checkbox" id="debug-mode-switch">
-                <label class="form-check-label" for="debug-mode-switch">Debug Mode</label>
-              </div>
-              <small class="text-muted">Show detailed logs for troubleshooting</small>
-            </div>
-            
-            <div class="config-item">
-              <div class="mb-2">
-                <label for="refresh-interval" class="form-label">Data refresh rate</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="refresh-interval" value="5" min="1" max="60">
-                  <span class="input-group-text">seconds</span>
-                </div>
-              </div>
-              <small class="text-muted">How often TTPG should send data</small>
-            </div>
-            
-            <div class="mt-3">
-              <button id="save-config-btn" class="btn btn-primary">Save Configuration</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <span>Activity Log</span>
             <div>
@@ -213,53 +177,41 @@
             <div id="log-container" class="log-container"></div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Game Stats Panel -->
-    <div class="row">
-      <div class="col-12">
         <div class="card">
-          <div class="card-header">Game Statistics</div>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Configuration</span>
+              <div>
+                <button id="save-config-btn" class="btn btn-sm btn-primary">Save</button>
+              </div>
+          </div>
           <div class="card-body">
-            <div class="row" id="game-stats">
-              <div class="col-md-3">
-                <div class="card text-center bg-light">
-                  <div class="card-body">
-                    <h5 class="card-title">Game Name</h5>
-                    <p class="card-text" id="stat-game-name">Unknown</p>
-                  </div>
-                </div>
+            <div class="config-item">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="auto-reconnect-switch" checked>
+                <label class="form-check-label" for="auto-reconnect-switch">Auto-reconnect</label>
               </div>
-              <div class="col-md-3">
-                <div class="card text-center bg-light">
-                  <div class="card-body">
-                    <h5 class="card-title">Players</h5>
-                    <p class="card-text" id="stat-players">0</p>
-                  </div>
-                </div>
+            </div>
+            
+            <div class="config-item">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" id="debug-mode-switch">
+                <label class="form-check-label" for="debug-mode-switch">Debug Mode</label>
               </div>
-              <div class="col-md-3">
-                <div class="card text-center bg-light">
-                  <div class="card-body">
-                    <h5 class="card-title">Current Turn</h5>
-                    <p class="card-text" id="stat-turn">0</p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="card text-center bg-light">
-                  <div class="card-body">
-                    <h5 class="card-title">Game State</h5>
-                    <p class="card-text" id="stat-game-state">Unknown</p>
-                  </div>
-                </div>
+            </div>
+            
+            <div class="config-item">
+              <label for="refresh-interval" class="form-label">Data refresh rate</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="refresh-interval" value="5" min="1" max="60">
+                <span class="input-group-text">seconds</span>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
+
   </div>
 
   <footer class="mt-4 py-3 bg-light">
@@ -296,12 +248,6 @@
     const saveConfigBtn = document.getElementById('save-config-btn');
     const logoutBtn = document.getElementById('logoutBtn');
     
-    // Game stats elements
-    const statGameName = document.getElementById('stat-game-name');
-    const statPlayers = document.getElementById('stat-players');
-    const statTurn = document.getElementById('stat-turn');
-    const statGameState = document.getElementById('stat-game-state');
-    
     // Set initial status indicators
     authStatusIndicator.className = 'status-indicator status-off';
     ttpgStatusIndicator.className = 'status-indicator status-off';
@@ -329,15 +275,6 @@
       logContainer.scrollTop = logContainer.scrollHeight;
     }
     
-    // Function to update game statistics
-    function updateGameStats(data) {
-      if (!data) return;
-      
-      statGameName.textContent = data.gameName || 'Unknown';
-      statPlayers.textContent = data.players ? data.players.length : 0;
-      statTurn.textContent = data.turn || 0;
-      statGameState.textContent = data.gameState || 'Unknown';
-    }
     
     // Update uptime
     setInterval(() => {
@@ -386,9 +323,6 @@
       // Update game data preview
       lastGameData = data;
       gameDataPreview.textContent = JSON.stringify(data, null, 2);
-      
-      // Update game stats
-      updateGameStats(data);
       
       if (config.debugMode) {
         addLogEntry('Received game data from TTPG', 'info');

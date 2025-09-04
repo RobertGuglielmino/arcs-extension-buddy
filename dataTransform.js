@@ -10,6 +10,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.convertJSONToGameData = convertJSONToGameData;
+var arcs_types_1 = require("@robertguglielmino/arcs-types");
 function convertJSONToGameData(input) {
     var players = input.players;
     var ambitions = input.ambitions;
@@ -89,6 +90,16 @@ function convertJSONToGameData(input) {
             blightkin: getAmbitionRanking("blightkin"),
             edenguard: getAmbitionRanking("edenguard"),
         },
+        hasFlagship: [false, false, false, false],
+        flagshipBoard: [undefined, undefined, undefined, undefined],
+        titles: players.map(function (p) { return p.titles; })
+    };
+    // Extract general data
+    var gameData = {
+        isCampaign: input.campaign,
+        hasBlightkin: playerData.fate.includes(arcs_types_1.Fates.Naturalist),
+        hasEdenguard: playerData.fate.includes(arcs_types_1.Fates.Guardian),
+        ambitionDeclarations: ambitions.map(function (a) { return a.declared; }),
         ambitionPodium: {
             tycoon: getAmbitionPodium("tycoon"),
             tyrant: getAmbitionPodium("tyrant"),
@@ -98,14 +109,6 @@ function convertJSONToGameData(input) {
             blightkin: getAmbitionPodium("blightkin"),
             edenguard: getAmbitionPodium("edenguard"),
         },
-        hasFlagship: [false, false, false, false],
-        flagshipBoard: [],
-        titles: players.map(function (p) { return p.titles; })
-    };
-    // Extract general data
-    var gameData = {
-        isCampaign: input.campaign,
-        ambitionDeclarations: ambitions.map(function (a) { return a.declared; }),
         courtCards: court.map(function (c) { return ({
             id: c.id,
             agents: c.influence
